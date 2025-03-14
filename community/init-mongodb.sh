@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# 명령어 실패 시 스크립트 종료
+set -euo pipefail
+
+# 로그 출력 함수
+log() {
+  echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
+}
+
+# 에러 발생 시 로그와 함께 종료하는 함수
+error() {
+  log "Error on line $1"
+  exit 1
+}
+
+trap 'error $LINENO' ERR
+
+log "스크립트 실행 시작."
+
+# docker network 생성
+if docker network ls --format '{{.Name}}' | grep -q '^nansan-network$'; then
+  log "Docker network named 'nansan-network' is already existed."
+else
+  log "Docker network named 'nansan-network' is creating..."
+  docker network create --driver bridge nansan-network
+fi
+
+cd community || { echo "디렉토리 변경 실패"; exit 1; }
+
+# 기존 mongodb 이미지를 삭제하고 새로 빌드
+log "mongodb image remove and build."
+docker rmi mongodb:latest || true
+docker build -t mongodb:latest .
+
+# Docker로 mongodb 서비스 실행
+log "Execute mongodb..."
+docker run -d \
+  --name mongodb \
+  --restart unless-stopped \
+  -e MONGODB_INITDB_ROOT_USERNAME=${MONGODB_INITDB_ROOT_USERNAME} \
+  -e MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD} \
+  -v /var/mongodb:/data/db \
+  -v /var/mongodb/log:/var/log/mongodb \
+  --network nansan-network \
+  mongodb:latest
+
+echo "작업이 완료되었습니다."

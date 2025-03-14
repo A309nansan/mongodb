@@ -1,4 +1,4 @@
-FROM mongo-express:1.0.2-20-alpine3.19
+FROM mongo-express:latest
 
 # 시간 동기화
 ENV TZ=Asia/Seoul

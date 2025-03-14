@@ -1,11 +1,9 @@
-FROM mongodb/mongodb-community-server:6.0.19-ubuntu2204
+FROM mongodb/mongodb-community-server:latest
 
 USER root
 
 # 시간 동기화
 ENV TZ=Asia/Seoul
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-RUN chown -R mongodb:mongodb /data/db
 
 USER mongodb

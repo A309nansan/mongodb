@@ -33,6 +33,23 @@ log "mongodb-express image remove and build."
 docker rmi mongodb-express:latest || true
 docker build -t mongodb-express:latest .
 
+# 필요한 환경변수를 Vault에서 가져오기
+log "Get credential data from vault..."
+
+TOKEN_RESPONSES=$(curl -s --request POST \
+  --data "{\"role_id\":\"${ROLE_ID}\", \"secret_id\":\"${SECRET_ID}\"}" \
+  https://vault.nansan.site/v1/auth/approle/login)
+
+CLIENT_TOKEN=$(echo "$TOKEN_RESPONSES" | jq -r '.auth.client_token')
+
+SECRET_RESPONSE=$(curl -s --header "X-Vault-Token: ${CLIENT_TOKEN}" \
+  --request GET https://vault.nansan.site/v1/kv/data/auth)
+
+ME_CONFIG_MONGODB_ADMINUSERNAME=$(echo "$SECRET_RESPONSE" | jq -r '.data.data.mongodb.username')
+ME_CONFIG_MONGODB_ADMINPASSWORD=$(echo "$SECRET_RESPONSE" | jq -r '.data.data.mongodb.password')
+ME_CONFIG_BASICAUTH_USERNAME=$(echo "$SECRET_RESPONSE" | jq -r '.data.data.express.username')
+ME_CONFIG_BASICAUTH_PASSWORD=$(echo "$SECRET_RESPONSE" | jq -r '.data.data.express.password')
+
 # 비밀번호 인코딩
 ENCODED_ME_CONFIG_MONGODB_ADMINPASSWORD=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "${ME_CONFIG_MONGODB_ADMINPASSWORD}")
 

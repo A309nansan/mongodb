@@ -33,6 +33,21 @@ log "mongodb image remove and build."
 docker rmi mongodb:latest || true
 docker build -t mongodb:latest .
 
+# 필요한 환경변수를 Vault에서 가져오기
+log "Get credential data from vault..."
+
+TOKEN_RESPONSES=$(curl -s --request POST \
+  --data "{\"role_id\":\"${ROLE_ID}\", \"secret_id\":\"${SECRET_ID}\"}" \
+  https://vault.nansan.site/v1/auth/approle/login)
+
+CLIENT_TOKEN=$(echo "$TOKEN_RESPONSES" | jq -r '.auth.client_token')
+
+SECRET_RESPONSE=$(curl -s --header "X-Vault-Token: ${CLIENT_TOKEN}" \
+  --request GET https://vault.nansan.site/v1/kv/data/auth)
+
+MONGODB_INITDB_ROOT_USERNAME=$(echo "$SECRET_RESPONSE" | jq -r '.data.data.mongodb.username')
+MONGODB_INITDB_ROOT_PASSWORD=$(echo "$SECRET_RESPONSE" | jq -r '.data.data.mongodb.password')
+
 # Docker로 mongodb 서비스 실행
 log "Execute mongodb..."
 docker run -d \

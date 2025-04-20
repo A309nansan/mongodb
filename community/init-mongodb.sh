@@ -28,6 +28,10 @@ fi
 
 cd community || { echo "디렉토리 변경 실패"; exit 1; }
 
+# 실행중인 mongodb container 삭제
+log "mongodb container remove."
+docker rm -f mongodb
+
 # 기존 mongodb 이미지를 삭제하고 새로 빌드
 log "mongodb image remove and build."
 docker rmi mongodb:latest || true
@@ -43,7 +47,7 @@ TOKEN_RESPONSES=$(curl -s --request POST \
 CLIENT_TOKEN=$(echo "$TOKEN_RESPONSES" | jq -r '.auth.client_token')
 
 SECRET_RESPONSE=$(curl -s --header "X-Vault-Token: ${CLIENT_TOKEN}" \
-  --request GET https://vault.nansan.site/v1/kv/data/auth)
+  --request GET https://vault.nansan.site/v1/kv/data/authentication)
 
 MONGODB_INITDB_ROOT_USERNAME=$(echo "$SECRET_RESPONSE" | jq -r '.data.data.mongodb.username')
 MONGODB_INITDB_ROOT_PASSWORD=$(echo "$SECRET_RESPONSE" | jq -r '.data.data.mongodb.password')
@@ -53,10 +57,10 @@ log "Execute mongodb..."
 docker run -d \
   --name mongodb \
   --restart unless-stopped \
-  -e MONGODB_INITDB_ROOT_USERNAME=${MONGODB_INITDB_ROOT_USERNAME} \
-  -e MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD} \
   -v /var/mongodb:/data/db \
   -v /var/mongodb/log:/var/log/mongodb \
+  -e MONGODB_INITDB_ROOT_USERNAME=${MONGODB_INITDB_ROOT_USERNAME} \
+  -e MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD} \
   --network nansan-network \
   mongodb:latest
 

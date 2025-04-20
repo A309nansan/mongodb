@@ -28,6 +28,10 @@ fi
 
 cd express || { echo "디렉토리 변경 실패"; exit 1; }
 
+# 실행중인 mongodb-express container 삭제
+log "mongodb-express container remove."
+docker rm -f mongodb-express
+
 # 기존 mongodb-express 이미지를 삭제하고 새로 빌드
 log "mongodb-express image remove and build."
 docker rmi mongodb-express:latest || true
@@ -43,7 +47,7 @@ TOKEN_RESPONSES=$(curl -s --request POST \
 CLIENT_TOKEN=$(echo "$TOKEN_RESPONSES" | jq -r '.auth.client_token')
 
 SECRET_RESPONSE=$(curl -s --header "X-Vault-Token: ${CLIENT_TOKEN}" \
-  --request GET https://vault.nansan.site/v1/kv/data/auth)
+  --request GET https://vault.nansan.site/v1/kv/data/authentication)
 
 ME_CONFIG_MONGODB_ADMINUSERNAME=$(echo "$SECRET_RESPONSE" | jq -r '.data.data.mongodb.username')
 ME_CONFIG_MONGODB_ADMINPASSWORD=$(echo "$SECRET_RESPONSE" | jq -r '.data.data.mongodb.password')
@@ -58,6 +62,8 @@ log "Execute mongodb-express..."
 docker run -d \
   --name mongodb-express \
   --restart unless-stopped \
+  -v /var/mongodb-express:/var/log/mongo-express \
+  -p 8082:8081 \
   -e ME_CONFIG_MONGODB_SERVER=mongodb \
   -e ME_CONFIG_MONGODB_PORT=27017 \
   -e ME_CONFIG_MONGODB_ADMINUSERNAME=${ME_CONFIG_MONGODB_ADMINUSERNAME} \
@@ -65,8 +71,6 @@ docker run -d \
   -e ME_CONFIG_MONGODB_ENABLE_ADMIN=true \
   -e ME_CONFIG_BASICAUTH_USERNAME=${ME_CONFIG_BASICAUTH_USERNAME} \
   -e ME_CONFIG_BASICAUTH_PASSWORD=${ME_CONFIG_BASICAUTH_PASSWORD} \
-  -v /var/mongodb-express:/var/log/mongo-express \
-  -p 8082:8081 \
   --network nansan-network \
   mongodb-express:latest
 

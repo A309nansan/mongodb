@@ -59,7 +59,7 @@ docker run -d \
   -v /var/mongodb/log:/var/log/mongodb \
   -e MONGODB_INITDB_ROOT_USERNAME=${MONGODB_INITDB_ROOT_USERNAME} \
   -e MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD} \
-  -p 11101:27019
+  -p 11101:27019 \
   --network nansan-network \
   mongodb:latest
 

@@ -26,8 +26,6 @@ else
   docker network create --driver bridge nansan-network
 fi
 
-cd express || { echo "디렉토리 변경 실패"; exit 1; }
-
 # 실행중인 mongodb-express container 삭제
 log "mongodb-express container remove."
 docker rm -f mongodb-express
@@ -63,7 +61,7 @@ docker run -d \
   --name mongodb-express \
   --restart unless-stopped \
   -v /var/mongodb-express:/var/log/mongo-express \
-  -p 8082:8081 \
+  -p 11100:8081 \
   -e ME_CONFIG_MONGODB_SERVER=mongodb \
   -e ME_CONFIG_MONGODB_PORT=27017 \
   -e ME_CONFIG_MONGODB_ADMINUSERNAME=${ME_CONFIG_MONGODB_ADMINUSERNAME} \

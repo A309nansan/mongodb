@@ -26,8 +26,6 @@ else
   docker network create --driver bridge nansan-network
 fi
 
-cd community || { echo "디렉토리 변경 실패"; exit 1; }
-
 # 실행중인 mongodb container 삭제
 log "mongodb container remove."
 docker rm -f mongodb
@@ -61,6 +59,7 @@ docker run -d \
   -v /var/mongodb/log:/var/log/mongodb \
   -e MONGODB_INITDB_ROOT_USERNAME=${MONGODB_INITDB_ROOT_USERNAME} \
   -e MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD} \
+  -p 11101:27019
   --network nansan-network \
   mongodb:latest
 
